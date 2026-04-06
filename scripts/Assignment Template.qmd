@@ -1,3 +1,9 @@
+---
+title: "Assignment Template"
+format: html
+---
+
+```{r}
 #### Required Functions ####
 
 library(ggplot2)
@@ -59,9 +65,4 @@ detect_pr <- matrix(unifs, ncol = search_size)
 #...
 
 
-
-
-
-
-
-
+```
