@@ -3,11 +3,17 @@ title: "Assignment Template"
 format: html
 ---
 
+#Loading Libraeries 
+
+
 ```{r}
 #install.packages("invgamma")
 
 library(invgamma)
 library(mvtnorm)
+library(ggplot2)
+library(MASS)
+library(extraDistr)
 ```
 
 ```{r}
@@ -37,10 +43,6 @@ n <- nrow(X)
 ```
 
 ```{r}
-#### Required Functions ####
-
-library(ggplot2)
-library(MASS)
 
 #### Data Generating Functions ####
 
@@ -110,7 +112,6 @@ detect_pr <- matrix(unifs, ncol = search_size)
 ```{r}
 #For the inverse gamma: rinvgamma()
 #install.packages("extraDistr")
-library(extraDistr)
 ```
 
 ### Helper functions
@@ -198,7 +199,7 @@ sample
 ## Gibbs Sampling Function
 
 ```{r}
-gibs_sampler = function(iterlim){
+gibs_sampler = function(iterlim,A2,mu_b,M){
   
   #Create matrix to store values 
   sample_matrix = matrix(0,nrow = iterlim,ncol = 6)
@@ -248,9 +249,8 @@ gibs_sampler = function(iterlim){
 ## Generate Sample
 
 ```{r}
-mat = gibs_sampler(50000)
+mat = gibs_sampler(50000,A2,mu_b,M)
 
-mat
 ```
 
 ## Trace plots
@@ -315,6 +315,12 @@ plot(x,b4,type = "l")
 
 ## Density Plots
 
+### $\sigma^2$
+
+-   Add the OLS
+
+-   Add the posterior mean
+
 ```{r}
 hist(sigma_squared, probability = TRUE,breaks = 50, 
      main = "Posterior of sigma^2", xlab = "sigma^2")
@@ -328,19 +334,214 @@ rate = b + (A2/2)
 curve(dinvgamma(x, shape,rate),
       from = 14, to = 26,
       add = TRUE, col = "red", lwd = 2)
+
+abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
 ```
 
 ### $\beta_0$
 
 ```{r}
-hist(b0,breaks = 20)
+hist(b0,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b0), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[1], col = "red", lwd = 2, lty = 2)
+
 ```
 
 ### $\beta_1$
 
+```{r}
+hist(b1,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b1), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[2], col = "red", lwd = 2, lty = 2)
+```
+
 ### $\beta_2$
+
+```{r}
+hist(b2,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b2), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[3], col = "red", lwd = 2, lty = 2)
+```
 
 ### $\beta_3$
 
+```{r}
+hist(b3,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b3), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[4], col = "red", lwd = 2, lty = 2)
+```
+
 ### $\beta_4$
 
+```{r}
+hist(b4,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[5], col = "red", lwd = 2, lty = 2)
+```
+
+## Credibility Intervals 
+
+### $\sigma^2$
+
+```{r}
+quantile(mat[, "sigma"], probs = c(0.025, 0.975))
+```
+
+### $\beta$ 
+
+```{r}
+apply(mat[, c("b0","b1","b2","b3","b4")], 2, quantile, probs = c(0.025, 0.975))
+```
+
+## Confidence Intervals
+
+-   Fit linear model and compute confidence intervals
+
+```{r}
+fit = lm(Y~X)
+
+summary(fit)
+
+confint(fit)
+```
+
+## Informative Prior 
+
+```{r}
+b_tilde = matrix(c(23,-3,-5,-5,0),nrow = 5,1)
+
+b_tilde
+
+M = 10*diag(1,5)
+
+M
+
+mu_b = mu_b_function(M,X,b_hat,b_tilde)
+
+mu_b
+
+A2 = A2_function(Y,b_tilde,mu_b)
+
+```
+
+### Sample
+
+```{r}
+mat2 = gibs_sampler(50000,A2,mu_b,M)
+
+#Extract vectors 
+sigma_squared = mat2[,1]
+b0 = mat2[,2]
+b1 = mat2[,3]
+b2 = mat2[,4]
+b3 = mat2[,5]
+b4 = mat2[,6]
+```
+
+## Density Plots
+
+### $\sigma^2$
+
+-   Add the OLS
+
+-   Add the posterior mean
+
+```{r}
+hist(sigma_squared, probability = TRUE,breaks = 50, 
+     main = "Posterior of sigma^2", xlab = "sigma^2")
+
+a = 1
+b = 1
+shape = a + (n/2)
+rate = b + (A2/2)
+
+#Overlay Inverse Gamma
+curve(dinvgamma(x, shape,rate),
+      from = 25, to = 40,
+      add = TRUE, col = "red", lwd = 2)
+
+
+
+abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
+```
+
+### $\beta_0$
+
+```{r}
+hist(b0,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b0), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[1], col = "red", lwd = 2, lty = 2)
+
+```
+
+### $\beta_1$
+
+```{r}
+hist(b1,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b1), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[2], col = "red", lwd = 2, lty = 2)
+```
+
+### $\beta_2$
+
+```{r}
+hist(b2,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b2), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[3], col = "red", lwd = 2, lty = 2)
+```
+
+### $\beta_3$
+
+```{r}
+hist(b3,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b3), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[4], col = "red", lwd = 2, lty = 2)
+```
+
+### $\beta_4$
+
+```{r}
+hist(b4,breaks = 50)
+
+#Posterior mean
+abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
+
+#OLS Estimate
+abline(v = b_hat[5], col = "red", lwd = 2, lty = 2)
+```
