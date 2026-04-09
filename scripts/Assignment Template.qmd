@@ -315,10 +315,19 @@ plot(x,b4,type = "l")
 
 ## Density Plots
 
-### $\sigma^2$
-
 ```{r}
-hist(sigma_squared,breaks = 20)
+hist(sigma_squared, probability = TRUE,breaks = 50, 
+     main = "Posterior of sigma^2", xlab = "sigma^2")
+
+a = 1
+b = 1
+shape = a + (n/2)
+rate = b + (A2/2)
+
+#Overlay Inverse Gamma
+curve(dinvgamma(x, shape,rate),
+      from = 14, to = 26,
+      add = TRUE, col = "red", lwd = 2)
 ```
 
 ### $\beta_0$
