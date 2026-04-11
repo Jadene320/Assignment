@@ -30,7 +30,7 @@ require(MASS)
 #   na.strings = "?"
 # )
 
-auto <- read_csv("scripts/auto.csv")
+auto <- read.csv("auto.csv")
 
 auto <- na.omit(auto)
 
@@ -667,4 +667,197 @@ abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
 
 #OLS Estimate
 abline(v = b_hat[5], col = "red", lwd = 2, lty = 2)
+```
+
+# Question 2
+
+## Data Generating Function 
+
+```{r}
+#### Data Generating Functions ####
+
+
+generate_lost <- function(grid_size, nsims){
+  
+  # Function to generate the prior distribution for the 
+  # location of the lost fisherman
+  # Args: 
+  #       grid_size: the dimensions of the square search grid
+  #       nsims: number of samples to base the prior distribution on
+  
+  mu_vec  <- c(grid_size/2, grid_size/2)
+  sig_mat <- matrix(c(2, 1, 5, 5), 2,2)
+  
+  dat <- mvrnorm(nsims, mu_vec, sig_mat)
+  dat <- round(abs(dat))
+  
+  prior <- matrix(rep(0,grid_size^2), grid_size, grid_size)
+  for (i in 1:NROW(dat)){
+    
+    if (dat[i,1] < grid_size & dat[i,2] < grid_size){
+      prior[dat[i,1], dat[i,2]] <- prior[dat[i,1], dat[i,2]] + 1
+    }
+    
+  }
+  prior <- prior/sum(prior)
+  return(prior)
+}
+
+
+generate_fisherman <- function(grid_size){
+  
+  # Function to generate the true location of the lost fisherman.
+  # This should not effect the search decision in any way!! It is unkown
+  # to the search crew.
+  # Args: 
+  #       grid_size: the dimensions of the square search grid
+
+  
+  mu_vec  <- c(grid_size/2, grid_size/2)
+  sig_mat <- matrix(c(2, 1, 5, 5), 2,2)
+  
+  location  <- round(mvrnorm(1, mu_vec, sig_mat))
+  true_grid <- matrix(rep(0, grid_size^2), grid_size, grid_size)
+  true_grid[location[1], location[2]] <- 1
+  
+  return(true_grid)
+}
+
+#### Simulation ####
+
+search_size <- 20
+unifs <- runif(search_size^2, min = 0.6, max = 0.9)
+
+#pi
+detect_pr  <- matrix(unifs, ncol = search_size)
+
+
+
+```
+
+## Simulation
+
+1.  Gain prior distribution for the fisherman's location from experts (generate lost)
+2.  Gain a detection distribution given the location (basically given i)
+3.  Merge
+4.  Perform search of the with highest detection probability
+    1.  Select grid with highest detection probability
+5.  If fisherman is not detected, update the probability distribution via bayes theorem (basically update detection_probability)
+    1.  Use equation 2 and 3
+        1.  If statement required
+6.  Continue until fisherman is found
+    1.  While loop
+
+### Generate fisherman's true location
+
+```{r}
+#Store in here
+true_loc = generate_fisherman(20)
+```
+
+### Gain prior distribution for fishermen's location using expert 
+
+```{r}
+expert_prior = generate_lost(20,100)
+```
+
+###  Detection probability 
+
+```{r}
+str(detect_pr)
+```
+
+### Combining distributions 
+
+-   Shows probabilities of successful detections
+
+```{r}
+merged_dists = expert_prior*detect_pr
+
+```
+
+## Search process 
+
+-   Search cell with highest probability of successful detection
+
+```{r}
+highest_prob_coord = arrayInd(which.max(merged_dists),dim(merged_dists))
+
+#Detection probability
+pi = detect_pr[highest_prob_coord]
+pi
+
+#Searching cell by drawing from bernoulli trail 
+#Ber(yi*pi)
+#Need to extract yi
+#Need to extract pi
+
+result = rbinom(1,1,true_loc[highest_prob_coord]*pi)
+
+result
+#Will be 0 if not there and 1 otherwise 
+print(true_loc[highest_prob_coord])
+
+#If 0 update the detection probability 
+
+#Update occurence these are the priors!!!!!!!!
+expert_prior[highest_prob_coord] = 
+  
+
+
+```
+
+###  Loop
+
+```{r}
+expert_prior = generate_lost(20,100)
+
+result = 0
+
+numiterations = 0
+
+while(result == 0){
+  #Update the number of iterations
+  numiterations = numiterations + 1
+  
+  #Merge distributions 
+  merged_dists = expert_prior*detect_pr
+
+  #Search cell with highest probability of occurence
+  
+  #Coordinates of that cell 
+  highest_prob_coord = arrayInd(which.max(merged_dists),dim(merged_dists))
+
+
+  #Detection probability
+  pi = detect_pr[highest_prob_coord]
+  
+  #True state
+  yi = true_loc[highest_prob_coord]
+  
+  #Simulate search process using bernoulli distribution
+  #Zi|Yi
+  result = rbinom(1,1,yi*pi)
+  
+  #Update occurence probabilities if fishermen not found
+  
+  #Will technically exit loop as soon as result = 1
+  if(result == 0){
+  old_theta = expert_prior[highest_prob_coord]
+  
+      
+  # Update all other cells first (equation 3)
+  expert_prior = expert_prior / (1 - pi * old_theta)
+  
+    
+  #Update current cell (equation 2)
+  expert_prior[highest_prob_coord] = (1 - pi) * old_theta / (1 - pi * old_theta)
+  }
+    
+  
+}
+
+result
+numiterations
+
 ```
