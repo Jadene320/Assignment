@@ -3,11 +3,11 @@ title: "Assignment Template"
 format: html
 ---
 
-#Loading Libraeries 
-
+#Loading Libraries
 
 ```{r}
-#install.packages("invgamma")
+# install.packages("invgamma")
+# install.packages("extraDistr")
 
 library(invgamma)
 library(mvtnorm)
@@ -21,14 +21,16 @@ library(extraDistr)
 require(MASS)
 
 # Load the Auto MPG dataset
-auto <- read.csv(
-  "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
-  header = FALSE,
-  sep = "",   # whitespace-separated file
-  col.names = c("mpg", "cylinders", "displacement", "horsepower",
-                "weight", "acceleration", "model_year", "origin", "car_name"),
-  na.strings = "?"
-)
+# auto <- read.csv(
+#   "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
+#   header = FALSE,
+#   sep = "",   # whitespace-separated file
+#   col.names = c("mpg", "cylinders", "displacement", "horsepower",
+#                 "weight", "acceleration", "model_year", "origin", "car_name"),
+#   na.strings = "?"
+# )
+
+auto <- read_csv("scripts/auto.csv")
 
 auto <- na.omit(auto)
 
@@ -109,11 +111,6 @@ detect_pr <- matrix(unifs, ncol = search_size)
 
 -   store each pair that gets sampled
 
-```{r}
-#For the inverse gamma: rinvgamma()
-#install.packages("extraDistr")
-```
-
 ### Helper functions
 
 ```{r}
@@ -130,7 +127,7 @@ A2_function = function(y,b_tilde,mu_b){
   (t(y)%*%y)  - (t(mu_b)%*%(M+t(X)%*%X)%*%mu_b)
 }
 
-b_hat_function= function(X,Y){
+b_hat_function = function(X,Y){
   solve(t(X)%*%X)%*%t(X)%*%Y
 }
 
@@ -275,42 +272,56 @@ mat = gibs_sampler(50000,A2,mu_b,M)
 x = seq(1,50000)
 sigma_squared = mat[,1]
 
-plot(x,sigma_squared,type = "l")
+#png("output/plots/trace_sigma.png")
+plot(x,sigma_squared,type = "l", main = expression(paste("Trace Plot for" ~ sigma^2)),
+     ylab = expression(sigma^2), 
+     xlab = "Iteration")
+#dev.off()
 ```
 
 ### $\beta_0$
 
 ```{r}
 b0 = mat[,2]
-plot(x,b0,type = "l")
+plot(x,b0,type = "l", main = expression(paste("Trace Plot for" ~ beta[0])),
+     ylab = expression(beta[0]), 
+     xlab = "Iteration")
 ```
 
 ### $\beta_1$
 
 ```{r}
 b1 = mat[,3]
-plot(x,b1,type = "l")
+plot(x,b1,type = "l", main = expression(paste("Trace Plot for" ~ beta[1])),
+     ylab = expression(beta[1]), 
+     xlab = "Iteration")
 ```
 
 ### $\beta_2$
 
 ```{r}
 b2 = mat[,4]
-plot(x,b2,type = "l")
+plot(x,b2,type = "l", main = expression(paste("Trace Plot for" ~ beta[2])),
+     ylab = expression(beta[2]), 
+     xlab = "Iteration")
 ```
 
 ### $\beta_3$
 
 ```{r}
 b3 = mat[,5]
-plot(x,b3,type = "l")
+plot(x,b3,type = "l", main = expression(paste("Trace Plot for" ~ beta[3])),
+     ylab = expression(beta[3]), 
+     xlab = "Iteration")
 ```
 
 ### $\beta_4$
 
 ```{r}
 b4 = mat[,6]
-plot(x,b4,type = "l")
+plot(x,b4,type = "l", main = expression(paste("Trace Plot for" ~ beta[4])),
+     ylab = expression(beta[4]), 
+     xlab = "Iteration")
 ```
 
 ## Density Plots
@@ -323,7 +334,7 @@ plot(x,b4,type = "l")
 
 ```{r}
 hist(sigma_squared, probability = TRUE,breaks = 50, 
-     main = "Posterior of sigma^2", xlab = "sigma^2")
+     main = expression(paste("Posterior of" ~ sigma^2)) , xlab = expression(sigma^2))
 
 a = 1
 b = 1
@@ -341,7 +352,7 @@ abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
 ### $\beta_0$
 
 ```{r}
-hist(b0,breaks = 50)
+hist(b0,breaks = 50, main = expression(paste("Density plot of" ~ beta[0[]])) , xlab = expression(beta[0]))
 
 #Posterior mean
 abline(v = mean(b0), col = "blue", lwd = 2, lty = 2)
@@ -354,7 +365,7 @@ abline(v = b_hat[1], col = "red", lwd = 2, lty = 2)
 ### $\beta_1$
 
 ```{r}
-hist(b1,breaks = 50)
+hist(b1,breaks = 50, main = expression(paste("Density plot of" ~ beta[1])) , xlab = expression(beta[1]))
 
 #Posterior mean
 abline(v = mean(b1), col = "blue", lwd = 2, lty = 2)
@@ -366,7 +377,7 @@ abline(v = b_hat[2], col = "red", lwd = 2, lty = 2)
 ### $\beta_2$
 
 ```{r}
-hist(b2,breaks = 50)
+hist(b2,breaks = 50, main = expression(paste("Density plot of" ~ beta[2])) , xlab = expression(beta[2]))
 
 #Posterior mean
 abline(v = mean(b2), col = "blue", lwd = 2, lty = 2)
@@ -378,7 +389,7 @@ abline(v = b_hat[3], col = "red", lwd = 2, lty = 2)
 ### $\beta_3$
 
 ```{r}
-hist(b3,breaks = 50)
+hist(b3,breaks = 50, main = expression(paste("Density plot of" ~ beta[3])) , xlab = expression(beta[3]))
 
 #Posterior mean
 abline(v = mean(b3), col = "blue", lwd = 2, lty = 2)
@@ -390,7 +401,7 @@ abline(v = b_hat[4], col = "red", lwd = 2, lty = 2)
 ### $\beta_4$
 
 ```{r}
-hist(b4,breaks = 50)
+hist(b4,breaks = 50, main = expression(paste("Density plot of" ~ beta[4])) , xlab = expression(beta[4]))
 
 #Posterior mean
 abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
@@ -399,18 +410,25 @@ abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
 abline(v = b_hat[5], col = "red", lwd = 2, lty = 2)
 ```
 
-## Credibility Intervals 
+## Credibility Intervals
 
 ### $\sigma^2$
 
 ```{r}
-quantile(mat[, "sigma"], probs = c(0.025, 0.975))
+cred_ints = quantile(mat[, "sigma"], probs = c(0.025, 0.975))
 ```
 
-### $\beta$ 
+### $\beta$
 
 ```{r}
-apply(mat[, c("b0","b1","b2","b3","b4")], 2, quantile, probs = c(0.025, 0.975))
+cred_int_B = apply(mat[, c("b0","b1","b2","b3","b4")], 2, quantile, probs = c(0.025, 0.975))
+```
+
+```{r}
+b0 = mat[,2]
+plot(x,b0,type = "l", main = expression(paste("Trace Plot for" ~ beta[0])),
+     ylab = expression(beta[0]), 
+     xlab = "Iteration")
 ```
 
 ## Confidence Intervals
@@ -425,7 +443,29 @@ summary(fit)
 confint(fit)
 ```
 
-## Informative Prior 
+## Density Plots w/ mean, OLS, Cred Intervals and CI
+
+### Overlayed Density plot of $\sigma^2$
+
+```{r}
+hist(sigma_squared, probability = TRUE,breaks = 50, 
+     main = expression(paste("Posterior of" ~ sigma^2)) , xlab = expression(sigma^2))
+
+a = 1
+b = 1
+shape = a + (n/2)
+rate = b + (A2/2)
+
+#Overlay Inverse Gamma
+curve(dinvgamma(x, shape,rate),
+      from = 14, to = 26,
+      add = TRUE, col = "red", lwd = 2)
+
+abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
+abline(v = cred_ints, col = "darkmagenta", lwd =2, lty = 2)
+```
+
+## Informative Prior
 
 ```{r}
 b_tilde = matrix(c(23,-3,-5,-5,0),nrow = 5,1)
