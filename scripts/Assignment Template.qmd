@@ -664,6 +664,8 @@ detect_pr  <- matrix(unifs, ncol = search_size)
 ```{r}
 #Store in here
 true_loc = generate_fisherman(20)
+
+true_ind <- which(true_loc == 1, arr.ind = TRUE)
 ```
 
 ### Gain prior distribution for fishermen's location using expert
@@ -700,9 +702,18 @@ result = 0
 
 numiterations = 0
 
+stages = c(1,5,10,15)
+
+list_stages = list()
+
+#Posterior probability 
+true_cell_probs = c()
+
 while(result == 0){
   #Update the number of iterations
   numiterations = numiterations + 1
+  
+  if (numiterations %in% stages)  list_stages[[as.character(numiterations)]] = expert_prior
   
   #Merge distributions 
   merged_dists = expert_prior*detect_pr
@@ -712,12 +723,12 @@ while(result == 0){
   #Coordinates of that cell 
   highest_prob_coord = arrayInd(which.max(merged_dists),dim(merged_dists))
 
-
   #Detection probability
   pi = detect_pr[highest_prob_coord]
   
   #True state
   yi = true_loc[highest_prob_coord]
+
   
   #Simulate search process using bernoulli distribution
   #Zi|Yi
@@ -737,11 +748,130 @@ while(result == 0){
   #Update current cell (equation 2)
   expert_prior[highest_prob_coord] = (1 - pi) * old_theta / (1 - pi * old_theta)
   }
+  
+  #Posterior probability of occurence after exploring a specific 
+  true_cell_probs <- c(true_cell_probs, expert_prior[true_ind])
     
   
 }
 
-result
+list_stages[["Final"]] <- expert_prior
+
+
+steps = seq(1,numiterations)
+
+true_cell_probs
+
+plot(steps,true_cell_probs,type = "l")
+str(list_stages)
+
+#result
 numiterations
 
+for (nm in names(list_stages)) {
+  mat <- list_stages[[nm]]
+  image(mat,
+        main = paste("Iteration:", nm),
+        col  = hcl.colors(64, "YlOrRd", rev = TRUE),
+        zlim = c(0, max(sapply(list_stages, max))))
+  grid(nx = ncol(mat), ny = nrow(mat), col = "black", lty = 1, lwd = 0.5)
+  points(
+    (true_ind[1] - 0.5) / nrow(mat),
+    (true_ind[2] - 0.5) / ncol(mat),
+    pch = 4, cex = 2, col = "blue", lwd = 2
+  )
+  
+}
+
+```
+
+## Comparison to Naive Strategy 
+
+### True fishermen location for both 
+
+```{r}
+true_loc = generate_fisherman(20)
+```
+
+### Naive 
+
+```{r}
+#Coordinates to 
+rows = seq(1,20)
+columns = seq(1,20)
+
+cells = expand.grid(rows, columns)
+cells = cells[sample(nrow(cells)), ]  # shuffle all 400 cells
+result = 0
+
+numiterations = 0
+
+while(result == 0){
+  #Update the number of iterations
+  numiterations = numiterations + 1
+
+  #Search random cell
+  row    = cells[numiterations, 1]
+  column = cells[numiterations, 2]
+  
+  #True state in random cell
+  result = true_loc[row, column]
+}
+
+numiterations
+```
+
+### Bayes
+
+```{r}
+expert_prior = generate_lost(20,100)
+
+result = 0
+
+numiterations = 0
+
+
+while(result == 0){
+  #Update the number of iterations
+  numiterations = numiterations + 1
+
+  
+  #Merge distributions 
+  merged_dists = expert_prior*detect_pr
+
+  #Search cell with highest probability of occurence
+  
+  #Coordinates of that cell 
+  highest_prob_coord = arrayInd(which.max(merged_dists),dim(merged_dists))
+
+  #Detection probability
+  pi = detect_pr[highest_prob_coord]
+  
+  #True state
+  yi = true_loc[highest_prob_coord]
+
+  
+  #Simulate search process using bernoulli distribution
+  #Zi|Yi
+  result = rbinom(1,1,yi*pi)
+  
+  #Update occurence probabilities if fishermen not found
+  
+  #Will technically exit loop as soon as result = 1
+  if(result == 0){
+  old_theta = expert_prior[highest_prob_coord]
+  
+      
+  # Update all other cells first (equation 3)
+  expert_prior = expert_prior / (1 - pi * old_theta)
+  
+    
+  #Update current cell (equation 2)
+  expert_prior[highest_prob_coord] = (1 - pi) * old_theta / (1 - pi * old_theta)
+  }
+  
+    
+  
+}
+numiterations
 ```
