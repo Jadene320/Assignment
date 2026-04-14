@@ -21,15 +21,6 @@ library(extraDistr)
 require(MASS)
 
 # Load the Auto MPG dataset
-# auto <- read.csv(
-#   "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data",
-#   header = FALSE,
-#   sep = "",   # whitespace-separated file
-#   col.names = c("mpg", "cylinders", "displacement", "horsepower",
-#                 "weight", "acceleration", "model_year", "origin", "car_name"),
-#   na.strings = "?"
-# )
-
 auto <- read.csv("auto.csv")
 
 auto <- na.omit(auto)
@@ -41,65 +32,6 @@ Xpreds <- auto[, c("displacement", "horsepower", "weight", "acceleration")]
 X <- as.matrix(cbind(1, scale(Xpreds)))
 
 n <- nrow(X)
-
-```
-
-```{r}
-
-#### Data Generating Functions ####
-
-generate_lost <- function(grid_size, nsims){
-  
-  # Function to generate the prior distribution for the 
-  # location of the lost fisherman
-  # Args: 
-  #       grid_size: the dimensions of the square search grid
-  #       nsims: number of samples to base the prior distribution on
-  
-  mu_vec  <- c(grid_size/2, grid_size/2)
-  sig_mat <- matrix(c(2, 1, 5, 5), 2,2)
-  
-  dat <- mvrnorm(nsims, mu_vec, sig_mat)
-  dat <- round(abs(dat))
-  
-  prior <- matrix(rep(0,grid_size^2), grid_size, grid_size)
-  for (i in 1:NROW(dat)){
-    
-    if (dat[i,1] < grid_size & dat[i,2] < grid_size){
-      prior[dat[i,1], dat[i,2]] <- prior[dat[i,1], dat[i,2]] + 1
-    }
-    
-  }
-  prior <- prior/sum(prior)
-  return(prior)
-}
-
-generate_fisherman <- function(grid_size){
-  
-  # Function to generate the true location of the lost fisherman.
-  # This should not effect the search decision in any way!! It is unkown
-  # to the search crew.
-  # Args: 
-  #       grid_size: the dimensions of the square search grid
-
-  
-  mu_vec  <- c(grid_size/2, grid_size/2)
-  sig_mat <- matrix(c(2, 1, 5, 5), 2,2)
-  
-  location  <- round(mvrnorm(1, mu_vec, sig_mat))
-  true_grid <- matrix(rep(0, grid_size^2), grid_size, grid_size)
-  true_grid[location[1], location[2]] <- 1
-  
-  return(true_grid)
-}
-
-#### Simulation ####
-
-search_size <- 20
-unifs <- runif(search_size^2, min = 0.6, max = 0.9)
-detect_pr <- matrix(unifs, ncol = search_size)
-
-#...
 
 ```
 
@@ -134,15 +66,9 @@ b_hat_function = function(X,Y){
 
 b_hat = b_hat_function(X,Y)
 
-b_hat
-
 mu_b = mu_b_function(M,X,b_hat,b_tilde)
 
-mu_b
-
 A2 = A2_function(Y,b_tilde,mu_b)
-
-A2
 ```
 
 ### Conditional Posteriors
@@ -162,6 +88,8 @@ sigma_posterior = function(a,b,A2) {
 -   Use to get $\sigma^2$
 
 ```{r}
+#| eval: false
+#| include: false
 #Fixed for all iterations
 a = 1
 b = 1
@@ -181,6 +109,8 @@ sigma_hat <- rinvgamma(1, shape, rate)
 -   To get $\beta$
 
 ```{r}
+#| eval: false
+#| include: false
 sigma = sigma_hat*solve((M+t(X)%*%X))
 sigma
 mean = mu_b
@@ -247,26 +177,9 @@ gibs_sampler = function(iterlim,A2,mu_b,M){
 
 ```{r}
 mat = gibs_sampler(50000,A2,mu_b,M)
-
 ```
 
-## Trace plots
-
--   Need to extract all the seperate columns
-
-    -   sigma\^2
-
-    -   b0
-
-    -   b1
-
-    -   b2
-
-    -   b3
-
-    -   b4
-
-### $\sigma^2$
+## Trace plots $\sigma^2$
 
 ```{r}
 x = seq(1,50000)
@@ -330,8 +243,6 @@ plot(x,b4,type = "l", main = expression(paste("Trace Plot for" ~ beta[4])),
 
 -   Add the OLS
 
--   Add the posterior mean
-
 ```{r}
 hist(sigma_squared, probability = TRUE,breaks = 50, 
      main = expression(paste("Posterior of" ~ sigma^2)) , xlab = expression(sigma^2))
@@ -343,7 +254,7 @@ rate = b + (A2/2)
 
 #Overlay Inverse Gamma
 curve(dinvgamma(x, shape,rate),
-      from = 14, to = 26,
+      from = 20, to = 45,
       add = TRUE, col = "red", lwd = 2)
 
 abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
@@ -671,7 +582,7 @@ abline(v = b_hat[5], col = "red", lwd = 2, lty = 2)
 
 # Question 2
 
-## Data Generating Function 
+## Data Generating Function
 
 ```{r}
 #### Data Generating Functions ####
@@ -755,19 +666,19 @@ detect_pr  <- matrix(unifs, ncol = search_size)
 true_loc = generate_fisherman(20)
 ```
 
-### Gain prior distribution for fishermen's location using expert 
+### Gain prior distribution for fishermen's location using expert
 
 ```{r}
 expert_prior = generate_lost(20,100)
 ```
 
-###  Detection probability 
+### Detection probability
 
 ```{r}
 str(detect_pr)
 ```
 
-### Combining distributions 
+### Combining distributions
 
 -   Shows probabilities of successful detections
 
@@ -776,7 +687,7 @@ merged_dists = expert_prior*detect_pr
 
 ```
 
-## Search process 
+## Search process
 
 -   Search cell with highest probability of successful detection
 
@@ -807,7 +718,7 @@ expert_prior[highest_prob_coord] =
 
 ```
 
-###  Loop
+### Loop
 
 ```{r}
 expert_prior = generate_lost(20,100)
