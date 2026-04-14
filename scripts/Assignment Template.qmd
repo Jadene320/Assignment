@@ -691,33 +691,6 @@ merged_dists = expert_prior*detect_pr
 
 -   Search cell with highest probability of successful detection
 
-```{r}
-highest_prob_coord = arrayInd(which.max(merged_dists),dim(merged_dists))
-
-#Detection probability
-pi = detect_pr[highest_prob_coord]
-pi
-
-#Searching cell by drawing from bernoulli trail 
-#Ber(yi*pi)
-#Need to extract yi
-#Need to extract pi
-
-result = rbinom(1,1,true_loc[highest_prob_coord]*pi)
-
-result
-#Will be 0 if not there and 1 otherwise 
-print(true_loc[highest_prob_coord])
-
-#If 0 update the detection probability 
-
-#Update occurence these are the priors!!!!!!!!
-expert_prior[highest_prob_coord] = 
-  
-
-
-```
-
 ### Loop
 
 ```{r}
