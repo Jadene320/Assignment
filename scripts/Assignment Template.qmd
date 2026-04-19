@@ -3,7 +3,7 @@ title: "Assignment Template"
 format: html
 ---
 
-#Loading Libraries
+# Question 1
 
 ```{r}
 # install.packages("invgamma")
@@ -36,15 +36,9 @@ n <- nrow(X)
 
 ```
 
-### Gibbs Sampling
+## Gibbs Sampling
 
--   define max iterations
-
--   starting values for $\beta$ and $\sigma^2$ to initialize
-
--   store each pair that gets sampled
-
-### Helper functions
+## Helper functions
 
 ```{r}
 b_tilde = matrix(0,nrow = 5,1)
@@ -180,7 +174,9 @@ gibs_sampler = function(iterlim,A2,mu_b,M){
 mat = gibs_sampler(50000,A2,mu_b,M)
 ```
 
-## Trace plots $\sigma^2$
+## Trace plots 
+
+### $\sigma^2$
 
 ```{r}
 x = seq(1,50000)
@@ -247,8 +243,6 @@ plot(x,b4,type = "l", main = expression(paste("Trace Plot for" ~ beta[4])),
 
 ### $\sigma^2$
 
--   Add the OLS
-
 ```{r}
 hist(sigma_squared, probability = TRUE,breaks = 50, 
      main = expression(paste("Posterior of" ~ sigma^2)) , xlab = expression(sigma^2))
@@ -260,7 +254,7 @@ rate = b + (A2/2)
 
 #Overlay Inverse Gamma
 curve(dinvgamma(x, shape,rate),
-      from = 20, to = 45,
+      from = 14, to = 24,
       add = TRUE, col = "red", lwd = 2)
 
 abline(v = mean(sigma_squared), col = "blue", lwd = 2, lty = 2)
@@ -483,11 +477,9 @@ b_tilde = matrix(c(23,-3,-5,-5,0),nrow = 5,1)
 
 M = 10*diag(1,5)
 
-M
+
 
 mu_b = mu_b_function(M,X,b_hat,b_tilde)
-
-mu_b
 
 A2 = A2_function(Y,b_tilde,mu_b)
 
@@ -507,13 +499,9 @@ b3 = mat2[,5]
 b4 = mat2[,6]
 ```
 
-## Density Plots
+### Density Plots
 
 ### $\sigma^2$
-
--   Add the OLS
-
--   Add the posterior mean
 
 ```{r}
 hist(sigma_squared, probability = TRUE,breaks = 50, 
@@ -663,17 +651,6 @@ detect_pr  <- matrix(unifs, ncol = search_size)
 
 ## Simulation
 
-1.  Gain prior distribution for the fisherman's location from experts (generate lost)
-2.  Gain a detection distribution given the location (basically given i)
-3.  Merge
-4.  Perform search of the with highest detection probability
-    1.  Select grid with highest detection probability
-5.  If fisherman is not detected, update the probability distribution via bayes theorem (basically update detection_probability)
-    1.  Use equation 2 and 3
-        1.  If statement required
-6.  Continue until fisherman is found
-    1.  While loop
-
 ### Generate fisherman's true location
 
 ```{r}
@@ -683,35 +660,19 @@ true_loc = generate_fisherman(20)
 true_ind <- which(true_loc == 1, arr.ind = TRUE)
 ```
 
-### Gain prior distribution for fishermen's location using expert
+### Gain prior distribution for fisherman's location using expert
 
 ```{r}
 expert_prior = generate_lost(20,100)
 ```
 
-### Detection probability
-
-```{r}
-str(detect_pr)
-```
-
-### Combining distributions
-
--   Shows probabilities of successful detections
-
-```{r}
-merged_dists = expert_prior*detect_pr
-
-```
-
-## Search process
+### Search process
 
 -   Search cell with highest probability of successful detection
 
 ### Loop
 
 ```{r}
-expert_prior = generate_lost(20,100)
 
 result = 0
 
@@ -723,6 +684,8 @@ list_stages = list()
 
 #Posterior probability 
 true_cell_probs = c()
+
+merged_dists = c()
 
 while(result == 0){
   #Update the number of iterations
@@ -772,16 +735,13 @@ while(result == 0){
 
 list_stages[["Final"]] <- expert_prior
 
+cat("It took",numiterations,"hours to find the fishermen")
+```
 
-steps = seq(1,numiterations)
+## Heatmaps of occurrence probability
 
-true_cell_probs
-
-plot(steps,true_cell_probs,type = "l")
-str(list_stages)
-
-#result
-numiterations
+```{r}
+list_stages[["Final"]] <- expert_prior
 
 for (nm in names(list_stages)) {
   mat <- list_stages[[nm]]
@@ -797,7 +757,23 @@ for (nm in names(list_stages)) {
   )
   
 }
+```
 
+## Posterior Probability of Occurrence
+
+```{r}
+steps = seq(1,numiterations)
+
+library(ggplot2)
+
+df <- data.frame(step = steps, probability = true_cell_probs)
+
+pdf("posterior_prob.pdf")
+ggplot(df, aes(x = step, y = probability)) +
+  geom_line(color = "#2196F3", linewidth = 1) +
+  labs(title = "Posterior Probability of Occurence in True Location",
+       x = "Iteration", y = "Probability") +
+  theme_minimal()
 ```
 
 ## Comparison to Naive Strategy
@@ -811,40 +787,49 @@ true_loc = generate_fisherman(20)
 ### Naive
 
 ```{r}
-#Coordinates to 
 rows = seq(1,20)
 columns = seq(1,20)
 
 cells = expand.grid(rows, columns)
-cells = cells[sample(nrow(cells)), ]  # shuffle all 400 cells
-result = 0
 
-numiterations = 0
+# Randomize grid
+cells = cells[sample(nrow(cells)), ]
+
+result = 0
+numiterations_random = 1
 
 while(result == 0){
-  #Update the number of iterations
-  numiterations = numiterations + 1
 
-  #Search random cell
-  row    = cells[numiterations, 1]
-  column = cells[numiterations, 2]
-  
-  #True state in random cell
-  result = true_loc[row, column]
+  row    = cells[numiterations_random,1]
+  column = cells[numiterations_random,2]
+
+  result = true_loc[row,column]
+
+  numiterations_random = numiterations_random + 1
 }
 
-numiterations
+cat("It took",numiterations_random - 1,"hours to find the fishermen under the naive strategy")
+
 ```
 
 ### Bayes
 
 ```{r}
+
+search_size <- 20
+
+unifs <- runif(search_size^2, min = 0.6, max = 0.9)
+
+#pi
+detect_pr  <- matrix(unifs, ncol = search_size)
+
 expert_prior = generate_lost(20,100)
 
 result = 0
 
 numiterations = 0
 
+merged_dists = c()
 
 while(result == 0){
   #Update the number of iterations
@@ -888,12 +873,12 @@ while(result == 0){
     
   
 }
-numiterations
+cat("It took",numiterations,"hours to find the fishermen under the Bayes strategy")
 ```
 
 # Question 3
 
-## Preamble
+### Preamble
 
 ```{r}
 # Use the same Auto MPG data from Q1
@@ -921,19 +906,20 @@ Y_1 = Y.contaminated[-outlier.idx]
 Y_2 = Y.contaminated[outlier.idx]
 ```
 
-### $\pi(\beta| \tau_1,\tau_2,X,y)$
+## $\pi(\beta| \tau_1,\tau_2,X,y)$
+
+-   Function to sample from conditional distribution of $\beta$
 
 ```{r}
 T0 = diag(1,5)
 sample_beta = function(tau_1,tau_2) {
   
-  #Step 1
+  #Covariance matrix
   sigma_b = ((tau_1 * (t(X_1)%*%X_1 ))+ (tau_2 * (t(X_2) %*% X_2)) + solve(T0))
   
-  #Step 2
   sigma_b_inv = solve(sigma_b)
   
-  #Step 3
+  #Mean vector
   mu_b = sigma_b_inv%*%((tau_1 * t(X_1)%*%Y_1) + (tau_2*t(X_2)%*%Y_2))
   
   #Sample and return
@@ -944,7 +930,9 @@ sample_beta = function(tau_1,tau_2) {
 }
 ```
 
-### $\pi(\tau_1|\beta,\tau_2,X,y)$
+## $\pi(\tau_1|\beta,\tau_2,X,y)$
+
+-   Function to sample from conditional distribution of $\tau_1$
 
 ```{r}
 sample_tau_1 = function(beta){
@@ -967,7 +955,9 @@ sample_tau_1 = function(beta){
 
 ```
 
-### $\pi(\tau_2|\beta,\tau_1,X,y)$
+## $\pi(\tau_2|\beta,\tau_1,X,y)$
+
+-   Function to sample from conditional distribution of $\tau_2$
 
 ```{r}
 sample_tau_2 = function(beta){
@@ -989,7 +979,7 @@ sample_tau_2 = function(beta){
 }
 ```
 
-## Gibbs Sampling
+## Gibbs Sampling Function
 
 ```{r}
 gibbs_sampler_2 = function(iterlim) {
@@ -998,9 +988,9 @@ gibbs_sampler_2 = function(iterlim) {
   colnames(sample_matrix) = c("tau_1","tau_2", "b0", "b1", "b2", "b3", "b4")
   
   #Initialise values of beta,tau_1 and tau_2 
-  tau_1 = runif(1,0,1)
+  tau_2 = runif(1,0,1)
   
-  tau_2 = tau_1 + runif(1,0,1)
+  tau_1 = tau_2 + runif(1,0,1)
   
   beta = matrix(runif(5,-5,5),5)
   
@@ -1009,7 +999,7 @@ gibbs_sampler_2 = function(iterlim) {
   
   sample_matrix[1,] = sample
   
-  #Loop and generate values
+  #Loop and sample values
   for(i in 2:iterlim){
     
     #Generate value for tau_1
@@ -1049,13 +1039,13 @@ mat3 = mat3[-burn_in_index,]
 ```{r}
 x = seq(1, 50000)
 b0 = mat3[,3]
+pdf("post_trace_b0.pdf")
 plot(x, b0, type = "l",
      main = expression(paste("Trace Plot for" ~ beta[0])),
      ylab = expression(beta[0]),
      xlab = "Iteration",
      ylim = range(b0))
 
-y = runif(50000,-1,1)
 ```
 
 ### $\beta_1$
@@ -1116,4 +1106,54 @@ pdf("post_trace_t2.pdf")
 plot(x,t1,type = "l", main = expression(paste("Trace Plot for" ~ tau[2])),
      ylab = expression(tau[2]), 
      xlab = "Iteration")
+```
+
+### Density Plots
+
+### $\beta_0$
+
+```{r}
+hist(b0,breaks = 50, main = expression(paste("Density plot of" ~ beta[0[]])) , xlab = expression(beta[0]))
+
+#Posterior mean
+abline(v = mean(b0), col = "blue", lwd = 2, lty = 2)
+
+```
+
+### $\beta_1$
+
+```{r}
+hist(b1,breaks = 50, main = expression(paste("Density plot of" ~ beta[1])) , xlab = expression(beta[1]))
+
+#Posterior mean
+abline(v = mean(b1), col = "blue", lwd = 2, lty = 2)
+```
+
+### $\beta_2$
+
+```{r}
+hist(b2,breaks = 50, main = expression(paste("Density plot of" ~ beta[2])) , xlab = expression(beta[2]))
+
+#Posterior mean
+abline(v = mean(b2), col = "blue", lwd = 2, lty = 2)
+
+```
+
+### $\beta_3$
+
+```{r}
+hist(b3,breaks = 50, main = expression(paste("Density plot of" ~ beta[3])) , xlab = expression(beta[3]))
+
+#Posterior mean
+abline(v = mean(b3), col = "blue", lwd = 2, lty = 2)
+
+```
+
+### $\beta_4$
+
+```{r}
+hist(b4,breaks = 50, main = expression(paste("Density plot of" ~ beta[4])) , xlab = expression(beta[4]))
+
+#Posterior mean
+abline(v = mean(b4), col = "blue", lwd = 2, lty = 2)
 ```
